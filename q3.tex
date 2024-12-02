@@ -1,0 +1,164 @@
+\begin{algorithm}
+    \caption{Minimum Fractional Cycle Cost}
+    \begin{algorithmic}[1]
+    \REQUIRE Adjacency matrix $G$ of size $n \times n$ with edge costs $c_e > 0$, precision $\epsilon$, largest edge cost $C$
+    \ENSURE Minimum fractional cost of a cycle up to precision $\epsilon$
+    
+    \STATE Initialize $\mu_{\text{low}} = 0$, $\mu_{\text{high}} = C$
+    
+    \WHILE{$\mu_{\text{high}} - \mu_{\text{low}} > \epsilon$}
+        \STATE Set $\mu = \frac{\mu_{\text{low}} + \mu_{\text{high}}}{2}$
+        
+        \STATE Define new edge weights $w_{e} = c_{e} - \mu$ for all edges $e$
+        
+        \STATE Run Bellman-Ford algorithm on the graph with weights $w_{e}$ to detect negative-weight cycles
+        
+        \IF{a negative-weight cycle is found}
+            \STATE Set $\mu_{\text{high}} = \mu$ \COMMENT{Decrease upper bound}
+        \ELSE
+            \STATE Set $\mu_{\text{low}} = \mu$ \COMMENT{Increase lower bound}
+        \ENDIF
+    \ENDWHILE
+    
+    \RETURN $\mu_{\text{low}}$
+    \end{algorithmic}
+    \end{algorithm}
+\section*{Problem Restatement}
+
+Given a directed graph \( G = (V, E) \) with \( n \) nodes and \( n^2 \) edges (in an adjacency matrix form), each edge \( e \in E \) has a positive cost \( c_e > 0 \). We are required to find the cycle with the minimum fractional cost, defined as:
+\[
+\frac{\sum_{e \in \text{cycle}} c_e}{\text{length of cycle}}.
+\]
+This quantity is often referred to as the \emph{minimum mean cycle cost}.
+
+### Key Idea
+
+To find the minimum mean cycle cost, we employ binary search on a parameter \( \mu \) which represents a candidate mean cycle cost. For a given \( \mu \), we transform the edge weights as \( w_e = c_e - \mu \). This transformation allows us to convert the minimum mean cycle problem into a negative cycle detection problem.
+
+### Algorithm Outline
+
+Initialize \( \mu_{\text{low}} = 0 \) and \( \mu_{\text{high}} = C \), where \( C \) is the maximum edge cost. While \( \mu_{\text{high}} - \mu_{\text{low}} > \epsilon \), where \( \epsilon \) is the desired precision: Set \( \mu = \frac{\mu_{\text{low}} + \mu_{\text{high}}}{2} \). Transform edge weights as \( w_e = c_e - \mu \). Run the Bellman-Ford algorithm to detect any negative-weight cycles. If a negative cycle is found, set \( \mu_{\text{high}} = \mu \). Otherwise, set \( \mu_{\text{low}} = \mu \).  Return \( \mu_{\text{low}} \) as the minimum mean cycle cost.
+
+### Proof of Correctness
+
+To prove the correctness of this algorithm, we need to show that:
+
+1. If there exists a cycle with a mean cost less than \( \mu \), it appears as a negative cycle after transforming the edge weights to \( w_e = c_e - \mu \).
+2. The binary search converges to the minimum mean cycle cost within the desired precision \( \epsilon \).
+3. The monotonicity for such problem.
+\section*{Step 1: Cycle Transformation}
+
+For a given \( \mu \), we define transformed edge weights as:
+\[
+w_e = c_e - \mu \quad \text{for all } e \in E.
+\]
+
+Let \( C = (v_1, v_2, \dots, v_m, v_1) \) be a cycle in \( G \) of length \( m \). The total weight of the cycle \( C \) under the transformed weights is:
+\[
+\sum_{e \in C} w_e = \sum_{e \in C} (c_e - \mu) = \sum_{e \in C} c_e - m \cdot \mu.
+\]
+
+If the mean cycle cost \( \frac{\sum_{e \in C} c_e}{m} \) is less than \( \mu \), then:
+\[
+\sum_{e \in C} c_e < m \cdot \mu \Rightarrow \sum_{e \in C} w_e < 0.
+\]
+Thus, any cycle with mean cost less than \( \mu \) appears as a \emph{negative cycle} in the graph with transformed edge weights \( w_e \).
+
+Conversely, if no negative-weight cycle exists for the transformed edge weights, it implies that all cycles have a mean cost greater than or equal to \( \mu \).
+
+\section*{Step 2: Binary Search on \( \mu \)}
+
+The algorithm uses binary search to converge on the minimum mean cycle cost. We start with an interval \( [\mu_{\text{low}}, \mu_{\text{high}}] = [0, C] \), where \( C \) is the largest edge cost. At each step, we set \( \mu = \frac{\mu_{\text{low}} + \mu_{\text{high}}}{2} \) and transform the edge weights.
+
+1. \textbf{If a negative cycle is detected} using the Bellman-Ford algorithm with the transformed weights, it implies that there exists a cycle with mean cost less than \( \mu \). Thus, we set \( \mu_{\text{high}} = \mu \), as the minimum mean cycle cost must be less than or equal to \( \mu \).
+
+2. \textbf{If no negative cycle is detected}, it implies that all cycles have mean costs greater than or equal to \( \mu \). In this case, we set \( \mu_{\text{low}} = \mu \).
+
+The binary search continues until \( \mu_{\text{high}} - \mu_{\text{low}} < \epsilon \), at which point \( \mu_{\text{low}} \) approximates the minimum mean cycle cost to within the desired precision.
+
+\section*{Step 3: Monotonicity Proof}
+
+To establish this monotonicity property, we define the transformed edge weights as:
+\[
+w_e = c_e - \mu \quad \text{for all } e \in E,
+\]
+where \( c_e \) is the original edge cost in \( G \), and \(\mu\) is the candidate mean cycle cost in the binary search.
+
+Let \( C = (v_1, v_2, \dots, v_m, v_1) \) be a cycle in \( G \) with length \( m \). The total weight of cycle \( C \) under the transformed weights is:
+\[
+\sum_{e \in C} w_e = \sum_{e \in C} (c_e - \mu) = \sum_{e \in C} c_e - m \cdot \mu.
+\]
+
+Define the mean cost of cycle \( C \) as:
+\[
+\text{Mean}(C) = \frac{\sum_{e \in C} c_e}{m}.
+\]
+
+\subsection*{Case 1: If a Negative Cycle Exists for a Given \(\mu\)}
+
+Suppose a negative cycle exists for a given \(\mu\), which means there exists a cycle \( C \) such that:
+\[
+\sum_{e \in C} w_e = \sum_{e \in C} c_e - m \cdot \mu < 0.
+\]
+
+Rearranging, we find:
+\[
+\text{Mean}(C) = \frac{\sum_{e \in C} c_e}{m} < \mu.
+\]
+
+Now consider a larger value \(\mu' > \mu\). For the same cycle \( C \), the transformed total weight becomes:
+\[
+\sum_{e \in C} w'_e = \sum_{e \in C} c_e - m \cdot \mu' = \sum_{e \in C} w_e - m \cdot (\mu' - \mu).
+\]
+Since \(\mu' - \mu > 0\), it follows that:
+\[
+\sum_{e \in C} w'_e < \sum_{e \in C} w_e < 0.
+\]
+Thus, if a negative cycle exists for \(\mu\), it will also exist for any \(\mu' > \mu\).
+
+\subsection*{Case 2: If No Negative Cycle Exists for a Given \(\mu\)}
+
+Suppose no negative cycle exists for a given \(\mu\), which means for all cycles \( C \):
+\[
+\sum_{e \in C} w_e = \sum_{e \in C} c_e - m \cdot \mu \geq 0.
+\]
+
+Now consider a smaller value \(\mu'' < \mu\). For any cycle \( C \), the transformed total weight becomes:
+\[
+\sum_{e \in C} w''_e = \sum_{e \in C} c_e - m \cdot \mu'' = \sum_{e \in C} w_e + m \cdot (\mu - \mu'').
+\]
+Since \(\mu - \mu'' > 0\), it follows that:
+\[
+\sum_{e \in C} w''_e > \sum_{e \in C} w_e \geq 0.
+\]
+Thus, if no negative cycle exists for \(\mu\), no negative cycle will exist for any \(\mu'' < \mu\).
+
+
+\subsection*{Monotonicity Conclusion}
+
+Based on the above two cases, we can conclude the following:
+
+If a negative cycle exists for a particular \(\mu\), it will also exist for any larger value \(\mu' > \mu\).
+If no negative cycle exists for a particular \(\mu\), it will also not exist for any smaller value \(\mu'' < \mu\).
+
+
+Therefore, \textbf{the existence of a negative cycle in the transformed graph is a monotonic property with respect to \(\mu\)}. This monotonicity guarantees that binary search can effectively converge to the minimum mean cycle cost.
+
+
+\section*{Step 4: Convergence and Complexity}
+
+Each iteration of the binary search reduces the interval \([ \mu_{\text{low}}, \mu_{\text{high}} ]\) by half. Thus, the binary search performs \( O(\log(C / \epsilon)) \) iterations to reach a precision of \( \epsilon \).
+
+For each iteration, we run the Bellman-Ford algorithm for each vertex, which has a time complexity of \( O(n^3) \) on a dense graph. Therefore, the overall complexity is:
+\[
+O(n^3 \log(C / \epsilon)),
+\]
+as required by the problem statement.
+
+    \item  (20 points) \textbf{Knapsack on a tree.} You are given a tree of $n$ vertices. Every vertex has a positive weight $w_i$ (a real number). Your goal is to choose a subset of vertices such that no two vertices are connected by an edge, and maximize the weight of the vertices you choose. Give a linear time $O(n)$ algorithm for that.
+
+    \item (25 points) \textbf{Number of spanning trees}. You are given an undirected graph of $n$ vertices. For two vertices labeled with $i$ and $j$, there is an edge $(i, j)$ if and only if $\lvert i-j\rvert \leq 5$. Give an algorithm that computes the number of spanning trees of this graph. Your algorithm should run in linear time $O(n)$. Note that a spanning tree $T = (V, E)$ differs from another $T' = (V, E')$ if and only if there exists some edges $e \in E$ but $e \notin E'$.
+
+    \textit{Hint 1.} The time complexity may have $5!$ and/or $2^5$ as constant terms.
+    
+    \textit{Hint 2.} This problem is not related to Kirchhoff's theorem (the matrix tree theorem). For that, the time complexity is $O(n^3)$ -- for computing determinant. 
